@@ -18,7 +18,6 @@ ExampleApp is a trademark of Example Corp.
 /* L i c e n s e  N o t i c e */
 
 using System.Collections.Generic;
-using AutoMapper;
 using POH.BusinessServices.Common.Abstractions;
 using POH.BusinessServices.Common.Fhir.Abstractions.CodeSystemLookup;
 using POH.BusinessServices.Common.Fhir.Abstractions.SecurityLabels;
@@ -33,28 +32,31 @@ namespace Demo.Fhir.Order.Application.Mapping.Profiles.UK
     using AMOrder = Domain.Entities.Order;
 
     /// <summary>
-    /// Class for mapping the AM order to Fast Healthcare Interoperability Resource Order
-    /// when order is redacted.
+    /// UK-specific implementation for mapping redacted order data.
     /// </summary>
     public class MapRedactedOrderUK : MapRedactedOrderBase
     {
-        /// <summary>
-        /// Mapping expression
-        /// </summary>
-        private IMappingExpression<AMOrder, ExampleApp.Fhir.Common.Mdrx.V1.Resources.Order> MappingExpression { get; set; }
-
         public MapRedactedOrderUK()
         {
         }
+
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="MapRedactedOrderUK"/> class.
         /// </summary>
-        public MapRedactedOrderUK(IInterfaceTranslation interfaceTranslation, ICodeSystemLookup codeSysLookup, ISecurityLabelHelper securityLabelHelper, IWebApiHelper webAPIHelper, IDataSource dataSource) :
-            base(interfaceTranslation, codeSysLookup, securityLabelHelper, webAPIHelper, dataSource)
+        /// <param name="interfaceTranslation">Interface translation service</param>
+        /// <param name="codeSysLookup">Code system lookup service</param>
+        /// <param name="securityLabelHelper">Security label helper service</param>
+        /// <param name="webAPIHelper">Web API helper service</param>
+        /// <param name="dataSource">Data source service</param>
+        public MapRedactedOrderUK(
+            IInterfaceTranslation interfaceTranslation, 
+            ICodeSystemLookup codeSysLookup, 
+            ISecurityLabelHelper securityLabelHelper, 
+            IWebApiHelper webAPIHelper, 
+            IDataSource dataSource) 
+            : base(interfaceTranslation, codeSysLookup, securityLabelHelper, webAPIHelper, dataSource)
         {
         }
-
-        
     }
 }
 

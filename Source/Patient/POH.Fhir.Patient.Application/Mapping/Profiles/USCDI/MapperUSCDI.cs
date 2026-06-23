@@ -17,65 +17,83 @@ ExampleApp is a trademark of Example Corp.
 **/
 /* L i c e n s e  N o t i c e */
 
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using AutoMapper;
-using POH.BusinessServices.Common.Fhir.Mapping;
 using Demo.Fhir.Order.Application.Interfaces.Mapping.Profiles.USCDI;
 using Demo.Fhir.Order.Application.Mapping.Profiles.USCDI.V1;
 using ExampleApp.Fhir.Common.Mdrx.V1.Infrastructure;
 
 namespace Demo.Fhir.Order.Application.Mapping.Profiles.USCDI
 {
-   
+    using AMOrder = Domain.Entities.Order;
+    using AMContact = Domain.Entities.Contact;
+    using AMProvenance = Domain.Entities.Provenance;
+    using FhirOrder = ExampleApp.Fhir.Common.Mdrx.V1.Resources.Order;
+    using FhirProvenance = ExampleApp.Fhir.Common.Mdrx.V1.Resources.Provenance;
+    using FhirOrderContact = ExampleApp.Fhir.Common.Mdrx.V1.BackboneElements.OrderContact;
+
     public class MapperUSCDI : IMapperUSCDI
     {
-
-        private readonly IMapper _mapper;
-        private readonly IMapper _mapperRedacted;
+        private readonly MapOrderUSCDI _orderMapper;
+        private readonly MapContactUSCDI _contactMapper;
+        private readonly MapOrderProvenanceUSCDI _provenanceMapper;
+        private readonly MapRedactedOrderUSCDI _redactedOrderMapper;
 
         public MapperUSCDI()
         {
         }
+
         public MapperUSCDI(
-            CommonMaps commonMaps,
             MapContactUSCDI mapContact,
             MapOrderUSCDI mapOrder,
             MapOrderProvenanceUSCDI mapOrderProvenance,
             MapRedactedOrderUSCDI mapRedactedOrder)
-
         {
-            var config = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile(commonMaps);
-                cfg.AddProfile(mapContact);
-                cfg.AddProfile(mapOrder);
-                cfg.AddProfile(mapOrderProvenance);
-            });
-
-            config.AssertConfigurationIsValid();
-            _mapper = config.CreateMapper();
-
-            var configRedacted = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile(commonMaps);
-                cfg.AddProfile(mapRedactedOrder);
-            });
-
-            configRedacted.AssertConfigurationIsValid();
-            _mapperRedacted = configRedacted.CreateMapper();
+            _contactMapper = mapContact;
+            _orderMapper = mapOrder;
+            _provenanceMapper = mapOrderProvenance;
+            _redactedOrderMapper = mapRedactedOrder;
         }
-         public TDest Map<TSource, TDest>(TSource source)
+
+        public TDest Map<TSource, TDest>(TSource source)
         {
-            return _mapper.Map<TDest>(source);
+            return Map<TSource, TDest>(source, isRedacted: false);
         }
 
         public TDest Map<TSource, TDest>(TSource source, bool isRedacted)
         {
-            return isRedacted?_mapperRedacted.Map<TSource, TDest>(source):_mapper.Map<TSource, TDest>(source);
+            if (source == null)
+            {
+                return default(TDest);
+            }
+
+            // Handle order mapping
+            if (source is AMOrder order && typeof(TDest) == typeof(FhirOrder))
+            {
+                var result = isRedacted 
+                    ? _redactedOrderMapper.Map(order)
+                    : _orderMapper.Map(order);
+                return (TDest)(object)result;
+            }
+
+            // Handle contact mapping
+            if (source is AMContact contact && typeof(TDest) == typeof(FhirOrderContact))
+            {
+                var result = _contactMapper.Map(contact);
+                return (TDest)(object)result;
+            }
+
+            // Handle provenance mapping
+            if (source is AMProvenance provenance && typeof(TDest) == typeof(FhirProvenance))
+            {
+                var result = _provenanceMapper.Map(provenance);
+                return (TDest)(object)result;
+            }
+
+            throw new NotSupportedException($"Mapping from {typeof(TSource).Name} to {typeof(TDest).Name} is not supported by MapperUSCDI.");
         }
     }
 }

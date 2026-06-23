@@ -45,7 +45,7 @@ namespace Demo.Fhir.Order.Application.Mapping.Shared
     /// <summary>
     /// Class for mapping the AM order to Fast Healthcare Interoperability Resource Order.
     /// </summary>
-    public abstract class MapBase : AutoMapper.Profile
+    public abstract class MapBase
     {
         /// <summary>
         /// System URI Address Use.

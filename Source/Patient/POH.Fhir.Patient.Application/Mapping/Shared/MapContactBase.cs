@@ -22,7 +22,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using AutoMapper;
 using POH.BusinessServices.Common.Abstractions;
 using POH.BusinessServices.Common.Fhir.Abstractions.CodedConcept;
 using POH.BusinessServices.Common.Fhir.Abstractions.CodeSystemLookup;
@@ -44,7 +43,7 @@ namespace Demo.Fhir.Order.Application.Mapping.Shared
     /// <summary>
     /// Class for mapping the AM order's contact to Fast Healthcare Interoperability Resource Order's contact.
     /// </summary>
-    public class MapContactBase : MapBase
+    public class MapContactBase : MapBase, IContactMapper
     {
         /// <summary>
         /// Interface translation attribute for Contact Phone Type
@@ -55,11 +54,6 @@ namespace Demo.Fhir.Order.Application.Mapping.Shared
         /// Interface translation attribute for Contact Phone System
         /// </summary>
         public const string IttAttributeContactPhoneSystem = "ContactPhoneSystem";
-
-        /// <summary>
-        /// Mapping expression
-        /// </summary>
-        protected IMappingExpression<AMContact, OrderContact> MappingExpression { get; private set; }
 
         /// <summary>
         ///   Initializes a new instance of the <see cref="MapContactBase"/> class.
@@ -84,15 +78,59 @@ namespace Demo.Fhir.Order.Application.Mapping.Shared
         public MapContactBase(IInterfaceTranslation interfaceTranslation, ICodeSystemLookup codeSysLookup, ISecurityLabelHelper securityLabelHelper, IWebApiHelper webAPIHelper, IDataSource dataSource) :
             base(interfaceTranslation, codeSysLookup, securityLabelHelper, webAPIHelper, dataSource)
         {
-            this.MappingExpression = CreateMap<AMContact, OrderContact>();
-            this.MappingExpression
-                .AfterMap(this.AfterMap)
-                .IgnoreAllMembers() // Ignore All properties so that only mapped ones will be sent out
-                .ForMember(dest => dest.Address, opt => opt.ResolveUsing(this.FhirAddress))
-                .ForMember(dest => dest.ContactPoints, opt => opt.ResolveUsing(this.FhirContactPoint))
-                .ForMember(dest => dest.Name, opt => opt.ResolveUsing(this.FhirName))
-                .ForMember(dest => dest.Relationships, opt => opt.ResolveUsing(this.FhirRelationship))
-                .ForMember(dest => dest.ElementExtensions, opt => opt.ResolveUsing(this.ContactSecurityTags));
+        }
+
+        /// <summary>
+        /// Maps an AM Contact to a FHIR OrderContact.
+        /// </summary>
+        /// <param name="source">The source AM Contact entity</param>
+        /// <returns>A FHIR OrderContact backbone element</returns>
+        public virtual OrderContact Map(AMContact source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            var contactPoints = FhirContactPoint(source);
+            var relationships = FhirRelationship(source);
+
+            FhirList<ContactPoint> fhirContactPoints = null;
+            if (contactPoints != null && contactPoints.Count > 0)
+            {
+                fhirContactPoints = new FhirList<ContactPoint>();
+                foreach (var cp in contactPoints)
+                {
+                    fhirContactPoints.Add(cp);
+                }
+            }
+
+            List<CodeableConcept> fhirRelationships = null;
+            if (relationships != null)
+            {
+                fhirRelationships = relationships.Select(cc => new CodeableConcept
+                {
+                    Text = cc.Text,
+                    Coding = cc.Coding?.Select(code => new Coding
+                    {
+                        Code = code.Value,
+                        Display = code.Name,
+                        System = code.System
+                    }).ToList()
+                }).ToList();
+            }
+
+            var destination = new OrderContact
+            {
+                Address = FhirAddress(source),
+                ContactPoints = fhirContactPoints,
+                Name = FhirName(source),
+                Relationships = fhirRelationships,
+                ElementExtensions = ContactSecurityTags(source)
+            };
+
+            AfterMap(source, destination);
+            return destination;
         }
 
         /// <summary>

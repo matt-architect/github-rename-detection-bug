@@ -24,7 +24,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using AutoMapper;
 using POH.BusinessServices.Common.Abstractions;
 using POH.BusinessServices.Common.Fhir.Abstractions.CodedConcept;
 using POH.BusinessServices.Common.Fhir.Abstractions.CodeSystemLookup;
@@ -55,7 +54,7 @@ namespace Demo.Fhir.Order.Application.Mapping.Shared
     /// <summary>
     /// Class for mapping the AM order to Fast Healthcare Interoperability Resource Order.
     /// </summary>
-    public class MapOrderBase : MapBase
+    public class MapOrderBase : MapBase, IOrderMapper
     {
         /// <summary>
         /// Primary Phone Rank
@@ -129,16 +128,11 @@ namespace Demo.Fhir.Order.Application.Mapping.Shared
         /// </summary>
         // ReSharper disable once InconsistentNaming
         protected IDataSource dataSource;
-        
+
         /// <summary>
         /// Contact mapper for contacts
         /// </summary>
         protected MapContactBase contactMapper;
-
-        /// <summary>
-        /// Mapping expression
-        /// </summary>
-        protected IMappingExpression<AMOrder, ExampleApp.Fhir.Common.Mdrx.V1.Resources.Order> MappingExpression { get; private set; }
 
         public MapOrderBase()
         {
@@ -167,55 +161,178 @@ namespace Demo.Fhir.Order.Application.Mapping.Shared
             base(interfaceTranslation, codeSysLookup, securityLabelHelper, webAPIHelper, dataSource)
         {
             this.dataSource = dataSource;
-            
+
             // Create a contact mapper instance to handle contact mapping
             this.contactMapper = new MapContactBase(interfaceTranslation, codeSysLookup, securityLabelHelper, webAPIHelper, dataSource);
+        }
 
-            this.MappingExpression = CreateMap<AMOrder, ExampleApp.Fhir.Common.Mdrx.V1.Resources.Order>();
-            this.MappingExpression
-                .AfterMap(this.AfterMap)
-                .IgnoreAllMembers() // Ignore All properties so that only mapped ones will be sent out
-                .ForMember(dest => dest.internalID, opt => opt.ResolveUsing(src => src.Identifier))
-                .ForMember(dest => dest.Identifiers, opt => opt.ResolveUsing(src => this.FhirIdentifier(src)))
-                .ForMember(dest => dest.Addresses, opt => opt.ResolveUsing(src => this.FhirAddress(src)))
-                .ForMember(dest => dest.BirthDate, opt => opt.ResolveUsing(src => this.FhirBirthDate(src)))
-                .ForMember(dest => dest.BirthGender, opt => { opt.PreCondition((src) => !src.IsSexRedacted); opt.ResolveUsing(src => this.FhirBirthSex(src));})
-                .ForMember(dest => dest.Communication, opt => opt.ResolveUsing(src => this.FhirCommunication(src)))
-                .ForMember(dest => dest.ContactPoints, opt => opt.ResolveUsing(src => this.FhirContactPoint(src)))
-                .ForMember(dest => dest.Contacts, opt => opt.ResolveUsing(src => this.AMContactList(src)))
-                .ForMember(dest => dest.Deceased, opt => opt.ResolveUsing(src => this.FhirDeceased(src)))
-                .ForMember(dest => dest.Gender, opt => { opt.PreCondition((src) => !src.IsSexRedacted); opt.ResolveUsing(src => this.FhirGender(src)); })
-                .ForMember(dest => dest.GeneralPractitioners, opt => opt.ResolveUsing(src => this.FhirGeneralPractitioner(src)))
-                .ForMember(dest => dest.IsActive, opt => opt.ResolveUsing(src => src.Active))
-                .ForMember(dest => dest.ManagingOrganization, opt => opt.ResolveUsing(src => this.FhirManagingOrganization()))
-                .ForMember(dest => dest.MaritalStatus, opt => opt.ResolveUsing(src => this.FhirMaritalStatus(src)))
-                .ForMember(dest => dest.Names, opt => opt.ResolveUsing(src => this.FhirName(src)))
-                .ForMember(dest => dest.MultipleBirth, opt => opt.ResolveUsing(src => this.FhirMultipleBirth(src)))
-                .ForMember(dest => dest.SecurityAndPrivacyTags, opt => opt.ResolveUsing(src => this.SecurityTags(src)))
-                .ForMember(dest => dest.lastUpdated, opt => opt.ResolveUsing(src => src.LastUpdatedWhen))
-                .ForMember(dest => dest.Race, opt => { opt.PreCondition((src) => !src.IsRaceRedacted); opt.ResolveUsing(src => this.FhirRace(src));})
-                .ForMember(dest => dest.Ethnicity, opt => { opt.PreCondition((src) => !src.IsRaceRedacted); opt.ResolveUsing(src => this.FhirEthnicity(src));})
-                .ForMember(dest => dest.Extensions, opt => opt.ResolveUsing(src => this.FhirExtensions(src)))
-                .ForMember(
-                    dest => dest.TribalAffiliation,
-                    opt =>
-                    {
-                        opt.PreCondition(src =>
-                        {
-                            var tribal = this.FhirTribalAffiliation(src);
-                            return tribal != null && tribal.Any();
-                        });
-                        opt.ResolveUsing(src => this.FhirTribalAffiliation(src));
-                    }
-                )
-                .ForMember(
-                    dest => dest.objectVersion,
-                    opt =>
-                    {
-                        opt.PreCondition(src => src.ObjectVersion != null);
-                        opt.ResolveUsing(src => this.ObjectVersion(src.ObjectVersion));
-                    }
-                );
+        /// <summary>
+        /// Maps an AM Order to a FHIR Order resource.
+        /// </summary>
+        /// <param name="source">The source AM Order entity</param>
+        /// <returns>A FHIR Order resource</returns>
+        public virtual ExampleApp.Fhir.Common.Mdrx.V1.Resources.Order Map(AMOrder source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            var addresses = this.FhirAddress(source);
+            var contactPoints = this.FhirContactPoint(source);
+            var contacts = this.AMContactList(source);
+            var names = this.FhirName(source);
+            var maritalStatus = this.FhirMaritalStatus(source);
+
+            var destination = new ExampleApp.Fhir.Common.Mdrx.V1.Resources.Order
+            {
+                internalID = source.Identifier.ToString(),
+                Identifiers = this.FhirIdentifier(source),
+                Addresses = ConvertToFhirListAddress(addresses) ?? new FhirList<Address>(),
+                BirthDate = this.FhirBirthDate(source),
+                Communication = this.FhirCommunication(source),
+                ContactPoints = ConvertToFhirListContactPoint(contactPoints) ?? new FhirList<ContactPoint>(),
+                Contacts = contacts != null && contacts.Count > 0 ? ConvertContactsToFhirList(contacts) : null,
+                Deceased = this.FhirDeceased(source),
+                GeneralPractitioners = this.FhirGeneralPractitioner(source),
+                IsActive = source.Active,
+                ManagingOrganization = this.FhirManagingOrganization(),
+                MaritalStatus = maritalStatus != null ? ConvertCodedConceptToCodeableConcept(maritalStatus) : null,
+                Names = names != null && names.Count > 0 ? ConvertToFhirListHumanName(names) : null,
+                MultipleBirth = this.FhirMultipleBirth(source),
+                SecurityAndPrivacyTags = this.SecurityTags(source),
+                lastUpdated = source.LastUpdatedWhen,
+                Extensions = this.FhirExtensions(source)
+            };
+
+            // Conditional mappings based on redaction flags
+            if (!source.IsSexRedacted)
+            {
+                destination.BirthGender = this.FhirBirthSex(source);
+                destination.Gender = this.FhirGender(source);
+            }
+
+            if (!source.IsRaceRedacted)
+            {
+                destination.Race = this.FhirRace(source);
+                destination.Ethnicity = this.FhirEthnicity(source);
+            }
+
+            // Conditional tribal affiliation
+            var tribal = this.FhirTribalAffiliation(source);
+            if (tribal != null && tribal.Any())
+            {
+                destination.TribalAffiliation = tribal;
+            }
+
+            // Conditional object version
+            if (source.ObjectVersion != null)
+            {
+                destination.objectVersion = this.ObjectVersion(source.ObjectVersion);
+            }
+
+            AfterMap(source, destination);
+            return destination;
+        }
+
+        /// <summary>
+        /// Converts a List of Address to FhirList of Address.
+        /// </summary>
+        private FhirList<Address> ConvertToFhirListAddress(List<Address> source)
+        {
+            var result = new FhirList<Address>();
+
+            if (source == null || source.Count == 0)
+            {
+                return result;
+            }
+
+            foreach (var item in source)
+            {
+                result.Add(item);
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Converts a List of ContactPoint to FhirList of ContactPoint.
+        /// </summary>
+        private FhirList<ContactPoint> ConvertToFhirListContactPoint(List<ContactPoint> source)
+        {
+            var result = new FhirList<ContactPoint>();
+
+            if (source == null || source.Count == 0)
+            {
+                return result;
+            }
+
+            foreach (var item in source)
+            {
+                result.Add(item);
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Converts AM Contact list to FHIR OrderContact list using the contact mapper.
+        /// </summary>
+        private FhirList<OrderContact> ConvertContactsToFhirList(List<Domain.Entities.Contact> source)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return null;
+            }
+
+            var result = new FhirList<OrderContact>();
+            foreach (var contact in source)
+            {
+                var mappedContact = contactMapper.Map(contact);
+                if (mappedContact != null)
+                {
+                    result.Add(mappedContact);
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Converts a List of HumanName to FhirList of HumanName.
+        /// </summary>
+        private FhirList<HumanName> ConvertToFhirListHumanName(List<HumanName> source)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return null;
+            }
+
+            var result = new FhirList<HumanName>();
+            foreach (var item in source)
+            {
+                result.Add(item);
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Converts POH CodedConcept to ExampleApp CodeableConcept.
+        /// </summary>
+        private CodeableConcept ConvertCodedConceptToCodeableConcept(CodedConcept source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new CodeableConcept
+            {
+                Text = source.Text,
+                Coding = source.Coding?.Select(code => new Coding
+                {
+                    Code = code.Value,
+                    Display = code.Name,
+                    System = code.System
+                }).ToList()
+            };
         }
 
         /// <summary>
@@ -934,7 +1051,7 @@ namespace Demo.Fhir.Order.Application.Mapping.Shared
         /// </summary>
         /// <param name="order">ExampleApp order object</param>
         /// <param name="adapterOrder">FHIR order object</param>
-        private void AfterMap(AMOrder order, ExampleApp.Fhir.Common.Mdrx.V1.Resources.Order adapterOrder)
+        protected virtual void AfterMap(AMOrder order, ExampleApp.Fhir.Common.Mdrx.V1.Resources.Order adapterOrder)
         {
             adapterOrder.SummaryDisplay = this.SummaryDisplay(order, adapterOrder);
 

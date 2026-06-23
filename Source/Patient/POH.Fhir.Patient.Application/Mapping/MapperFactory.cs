@@ -17,20 +17,20 @@ ExampleApp is a trademark of Example Corp.
 **/
 /* L i c e n s e  N o t i c e */
 
-using AutoMapper;
 using POH.BusinessServices.Common.Abstractions;
 using POH.BusinessServices.Common.Fhir.Abstractions.CodeSystemLookup;
 using POH.BusinessServices.Common.Fhir.Abstractions.SecurityLabels;
 using POH.BusinessServices.Common.Fhir.Abstractions.Translation;
-using POH.BusinessServices.Common.Fhir.Mapping;
 using Demo.Fhir.Order.Application.Common.Constants;
 using Demo.Fhir.Order.Application.Interfaces;
+using Demo.Fhir.Order.Application.Interfaces.Mapping.Profiles.UK;
+using Demo.Fhir.Order.Application.Interfaces.Mapping.Profiles.USCDI;
+using Demo.Fhir.Order.Application.Interfaces.Mapping.Shared;
 using Demo.Fhir.Order.Application.Mapping.Profiles.UK;
 using Demo.Fhir.Order.Application.Mapping.Profiles.USCDI;
 using Demo.Fhir.Order.Application.Mapping.Shared;
 using ExampleApp.Fhir.Common;
 using ExampleApp.Fhir.Common.Exceptions;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Demo.Fhir.Order.Application.Mapping
 {
@@ -40,24 +40,22 @@ namespace Demo.Fhir.Order.Application.Mapping
     public static class MapperFactory
     {
         /// <summary>
-        /// 
+        /// Creates a profile-specific mapper orchestrator based on the requested FHIR profile.
         /// </summary>
-        /// <param name="webApiHelper"></param>
-        /// <param name="ittLookup"></param>
-        /// <param name="codeSystemLookup"></param>
-        /// <param name="secLabelHelper"></param>
-        /// <param name="dataSource"></param>
-        /// <param name="profile"></param>
-        /// <returns></returns>
-        public static IMapper CreateMapper(IWebApiHelper webApiHelper,
+        /// <param name="webApiHelper">WebAPI helper for environment configuration</param>
+        /// <param name="ittLookup">Interface translation lookup</param>
+        /// <param name="codeSystemLookup">Code system lookup</param>
+        /// <param name="secLabelHelper">Security label helper</param>
+        /// <param name="dataSource">Data source for order privacy lookup</param>
+        /// <param name="profile">The FHIR profile to use (UKCore, USCore, or empty for auto-detection)</param>
+        /// <returns>A mapper orchestrator that implements IDomainMapper for compile-time type safety</returns>
+        public static IDomainMapper CreateMapper(IWebApiHelper webApiHelper,
             IInterfaceTranslation ittLookup,
             ICodeSystemLookup codeSystemLookup,
             ISecurityLabelHelper secLabelHelper,
             IDataSource dataSource,
             string profile)
         {            
-            MapperConfiguration config = null;
-
             profile ??= string.Empty;
 
             if (string.IsNullOrEmpty(profile))
@@ -71,61 +69,27 @@ namespace Demo.Fhir.Order.Application.Mapping
             switch (profile.ToLower())
             {
                 case "ukcore":
-                    config = new MapperConfiguration(cfg =>
-                    {
-                        cfg.AddProfile(new CommonMaps());
-                        cfg.AddProfile(new MapContactUK(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource));
-                        cfg.AddProfile(new MapOrderUK(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource));
-                        cfg.AddProfile(new MapOrderProvenanceUK(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource));
-                        cfg.AddProfile(new MapRedactedOrderUK(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource));
-                    });
-                    break;
+                    return new MapperUK(
+                        new MapContactUK(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource),
+                        new MapOrderUK(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource),
+                        new MapOrderProvenanceUK(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource),
+                        new MapRedactedOrderUK(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource)
+                    );
 
                 case "uscore":
                 case "":                
-                    config = new MapperConfiguration(cfg =>
-                    {
-                        cfg.AddProfile(new CommonMaps());
-                        cfg.AddProfile(new MapContactUSCDI(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource));
-                        cfg.AddProfile(new MapOrderUSCDI(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource));
-                        cfg.AddProfile(new MapOrderProvenanceUSCDI(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource));
-                        cfg.AddProfile(new MapRedactedOrderUSCDI(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource));
-                    });
-                    break;
+                    return new MapperUSCDI(
+                        new MapContactUSCDI(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource),
+                        new MapOrderUSCDI(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource),
+                        new MapOrderProvenanceUSCDI(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource),
+                        new MapRedactedOrderUSCDI(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource)
+                    );
 
                 default:
                     string message = $"ImplementationProfile '{profile}' is not supported.";
                     throw new FhirWebApiException(FhirErrorTypes.UnsupportedParameter, message);
             }
-
-            config.AssertConfigurationIsValid();
-            return config.CreateMapper();
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="webApiHelper"></param>
-        /// <param name="ittLookup"></param>
-        /// <param name="codeSystemLookup"></param>
-        /// <param name="secLabelHelper"></param>
-        /// <param name="dataSource"></param>
-        /// <returns></returns>
-        //public static IMapper CreateRedactedMapper(
-        //    IWebApiHelper webApiHelper,
-        //    IInterfaceTranslation ittLookup,
-        //    ICodeSystemLookup codeSystemLookup,
-        //    ISecurityLabelHelper secLabelHelper,
-        //    IDataSource dataSource)
-        //{   
-        //    MapperConfiguration config = new MapperConfiguration(cfg =>
-        //    {
-        //        cfg.AddProfile(new MapRedactedOrderBase(ittLookup, codeSystemLookup, secLabelHelper, webApiHelper, dataSource));
-        //    });
-
-        //    config.AssertConfigurationIsValid();
-        //    return config.CreateMapper();
-        //}
     }
 }
 

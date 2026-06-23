@@ -15,10 +15,10 @@ ExampleApp is a trademark of Example Corp.
 **/
 /* L i c e n s e  N o t i c e */
 
-using AutoMapper;
 using FluentResults;
 using POH.Infrastructure.Mediator;
 using Demo.Fhir.Order.Application.Interfaces.Repositories.OrderHeader;
+using Demo.Fhir.Order.Application.Mapping.OrderHeader;
 using Demo.Fhir.Order.Application.OrderHeader.Models.Response;
 using Demo.Fhir.Order.Application.OrderHeader.Queries;
 using System;
@@ -33,10 +33,10 @@ namespace Demo.Fhir.Order.Application.OrderHeader.Handler
     public class OrderHeaderOrderInfoQueryHandler : IRequestHandler<OrderHeaderOrderInfoQuery, Result<OrderHeaderOrderInfoResponse>>
     {
 
-        private readonly IMapper Mapper;
+        private readonly IOrderHeaderMapper Mapper;
         private readonly IOrderHeaderRepository OrderHeaderRepository;
 
-        public OrderHeaderOrderInfoQueryHandler(IOrderHeaderRepository orderHeaderRepository, IMapper mapper)
+        public OrderHeaderOrderInfoQueryHandler(IOrderHeaderRepository orderHeaderRepository, IOrderHeaderMapper mapper)
         {
             OrderHeaderRepository = orderHeaderRepository;
             Mapper = mapper;
@@ -50,7 +50,7 @@ namespace Demo.Fhir.Order.Application.OrderHeader.Handler
 
             if (repoResult.IsSuccess)
             {
-                var response = Mapper.Map<OrderHeaderOrderInfoResponse>(repoResult.Value);
+                var response = Mapper.MapOrderInfo(repoResult.Value);
                 result = new Result<OrderHeaderOrderInfoResponse>().WithValue(response);
             }
             else

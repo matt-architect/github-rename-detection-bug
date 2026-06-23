@@ -17,17 +17,15 @@ ExampleApp is a trademark of Example Corp.
 **/
 /* L i c e n s e  N o t i c e */
 
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using AutoMapper;
 using POH.BusinessServices.Common.Abstractions;
 using POH.BusinessServices.Common.Fhir.Abstractions.CodeSystemLookup;
 using POH.BusinessServices.Common.Fhir.Abstractions.SecurityLabels;
 using POH.BusinessServices.Common.Fhir.Abstractions.Translation;
-using POH.BusinessServices.Common.Fhir.Mapping;
 using Demo.Fhir.Order.Application.Interfaces;
 using Demo.Fhir.Order.Application.Interfaces.Mapping.Profiles.UK;
 using Demo.Fhir.Order.Application.Mapping.Shared;
@@ -35,51 +33,72 @@ using ExampleApp.Fhir.Common.Mdrx.V1.Infrastructure;
 
 namespace Demo.Fhir.Order.Application.Mapping.Profiles.UK
 {
+    using AMOrder = Domain.Entities.Order;
+    using AMContact = Domain.Entities.Contact;
+    using AMProvenance = Domain.Entities.Provenance;
+    using FhirOrder = ExampleApp.Fhir.Common.Mdrx.V1.Resources.Order;
+    using FhirProvenance = ExampleApp.Fhir.Common.Mdrx.V1.Resources.Provenance;
+    using FhirOrderContact = ExampleApp.Fhir.Common.Mdrx.V1.BackboneElements.OrderContact;
+
     public class MapperUK : IMapperUK
     {
-        private readonly IMapper _mapper;
-        private readonly IMapper _mapperRedacted;
-        private readonly MapOrderUK _mapOrder;
+        private readonly MapOrderUK _orderMapper;
+        private readonly MapContactUK _contactMapper;
+        private readonly MapOrderProvenanceUK _provenanceMapper;
+        private readonly MapRedactedOrderUK _redactedOrderMapper;
 
         public MapperUK()
         {
         }
 
         public MapperUK(
-            CommonMaps commonMaps,
             MapContactUK mapContact,
             MapOrderUK mapOrder,
             MapOrderProvenanceUK mapOrderProvenance,
-            MapRedactedOrderBase mapRedactedOrder)
+            MapRedactedOrderUK mapRedactedOrder)
         {
-            var config = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile(commonMaps);
-                cfg.AddProfile(mapContact);
-                cfg.AddProfile(mapOrder);
-                cfg.AddProfile(mapOrderProvenance);
-            });
-
-            config.AssertConfigurationIsValid();
-            _mapper = config.CreateMapper();
-
-            var configRedacted = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile(mapRedactedOrder);
-            });
-
-            configRedacted.AssertConfigurationIsValid();
-            _mapperRedacted = configRedacted.CreateMapper();
+            _contactMapper = mapContact;
+            _orderMapper = mapOrder;
+            _provenanceMapper = mapOrderProvenance;
+            _redactedOrderMapper = mapRedactedOrder;
         }
 
         public TDest Map<TSource, TDest>(TSource source)
         {
-            return _mapper.Map<TDest>(source);
+            return Map<TSource, TDest>(source, isRedacted: false);
         }
 
         public TDest Map<TSource, TDest>(TSource source, bool isRedacted = false)
         {
-            return isRedacted ? _mapperRedacted.Map<TSource, TDest>(source) : _mapper.Map<TSource, TDest>(source);
+            if (source == null)
+            {
+                return default(TDest);
+            }
+
+            // Handle order mapping
+            if (source is AMOrder order && typeof(TDest) == typeof(FhirOrder))
+            {
+                var result = isRedacted 
+                    ? _redactedOrderMapper.Map(order)
+                    : _orderMapper.Map(order);
+                return (TDest)(object)result;
+            }
+
+            // Handle contact mapping
+            if (source is AMContact contact && typeof(TDest) == typeof(FhirOrderContact))
+            {
+                var result = _contactMapper.Map(contact);
+                return (TDest)(object)result;
+            }
+
+            // Handle provenance mapping
+            if (source is AMProvenance provenance && typeof(TDest) == typeof(FhirProvenance))
+            {
+                var result = _provenanceMapper.Map(provenance);
+                return (TDest)(object)result;
+            }
+
+            throw new NotSupportedException($"Mapping from {typeof(TSource).Name} to {typeof(TDest).Name} is not supported by MapperUK.");
         }
     }
 }

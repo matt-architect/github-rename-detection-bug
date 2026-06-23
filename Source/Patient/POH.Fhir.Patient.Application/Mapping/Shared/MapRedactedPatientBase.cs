@@ -18,7 +18,6 @@ ExampleApp is a trademark of Example Corp.
 /* L i c e n s e  N o t i c e */
 
 using System.Collections.Generic;
-using AutoMapper;
 using POH.BusinessServices.Common.Abstractions;
 using POH.BusinessServices.Common.Fhir.Abstractions.CodeSystemLookup;
 using POH.BusinessServices.Common.Fhir.Abstractions.SecurityLabels;
@@ -30,41 +29,64 @@ using ExampleApp.Fhir.Common.Mdrx.V1.BackboneElements;
 namespace Demo.Fhir.Order.Application.Mapping.Shared
 {
     using AMOrder = Domain.Entities.Order;
+    using FhirOrder = ExampleApp.Fhir.Common.Mdrx.V1.Resources.Order;
 
     /// <summary>
     /// Class for mapping the AM order to Fast Healthcare Interoperability Resource Order
     /// when order is redacted.
     /// </summary>
-    public abstract class MapRedactedOrderBase : MapBase
+    public abstract class MapRedactedOrderBase : MapBase, IRedactedOrderMapper
     {
-        /// <summary>
-        /// Mapping expression
-        /// </summary>
-        private IMappingExpression<AMOrder, ExampleApp.Fhir.Common.Mdrx.V1.Resources.Order> MappingExpression { get; set; }
-
         public MapRedactedOrderBase()
         {
         }
-        /// <summary>
-        /// 
-        /// </summary>
-        public MapRedactedOrderBase(IInterfaceTranslation interfaceTranslation, ICodeSystemLookup codeSysLookup, ISecurityLabelHelper securityLabelHelper, IWebApiHelper webAPIHelper, IDataSource dataSource) :
-            base(interfaceTranslation, codeSysLookup, securityLabelHelper, webAPIHelper, dataSource)
-        {
-            this.MappingExpression = CreateMap<AMOrder, ExampleApp.Fhir.Common.Mdrx.V1.Resources.Order>();
-            this.MappingExpression
-                .IgnoreAllMembers() // Ignore All properties so that only mapped ones will be sent out
-                .ForMember(dest => dest.internalID, opt => opt.MapFrom(src => src.Identifier))
-                .ForMember(dest => dest.SecurityAndPrivacyTags, opt => opt.ResolveUsing(this.SecurityTags));                
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MapRedactedOrderBase"/> class.
+        /// </summary>
+        /// <param name="interfaceTranslation">Interface translation service</param>
+        /// <param name="codeSysLookup">Code system lookup service</param>
+        /// <param name="securityLabelHelper">Security label helper service</param>
+        /// <param name="webAPIHelper">Web API helper service</param>
+        /// <param name="dataSource">Data source service</param>
+        public MapRedactedOrderBase(
+            IInterfaceTranslation interfaceTranslation, 
+            ICodeSystemLookup codeSysLookup, 
+            ISecurityLabelHelper securityLabelHelper, 
+            IWebApiHelper webAPIHelper, 
+            IDataSource dataSource) 
+            : base(interfaceTranslation, codeSysLookup, securityLabelHelper, webAPIHelper, dataSource)
+        {
         }
 
         /// <summary>
-        /// The SecurityTags method is used to map all the security tags for the resource.
+        /// Maps a redacted AM Order to a FHIR Order resource.
+        /// Only maps the internal ID and security tags for redacted orders.
+        /// </summary>
+        /// <param name="source">The source AM Order entity</param>
+        /// <returns>A FHIR Order resource with only security-permitted fields</returns>
+        public virtual FhirOrder Map(AMOrder source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            var destination = new FhirOrder
+            {
+                internalID = source.Identifier.ToString(),
+                SecurityAndPrivacyTags = GetSecurityTags(source)
+            };
+
+            return destination;
+        }
+
+        /// <summary>
+        /// The GetSecurityTags method is used to map all the security tags for the resource.
         /// </summary>
         /// <param name="order">AM Order</param>
         /// <returns>List of security labels</returns>
-        private List<Coding> SecurityTags(AMOrder order)
+        private List<Coding> GetSecurityTags(AMOrder order)
         {
             return this.SecurityLabelHelper.GetRedactedSecurityLabel();
         }

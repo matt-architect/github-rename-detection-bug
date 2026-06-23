@@ -22,8 +22,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using AutoMapper;
-using POH.BusinessServices.Common.Fhir.Mapping;
 using Demo.Fhir.Order.Application.Interfaces.Mapping.Profiles.USCDI.V3;
 using Demo.Fhir.Order.Application.Mapping.Profiles.USCDI;
 using Demo.Fhir.Order.Application.Mapping.Profiles.USCDI.v3;
@@ -33,20 +31,17 @@ namespace Demo.Fhir.Order.Application.Mapping.Profiles.USCDI.V3
 {
     public class MapperUSCDIV3 : MapperUSCDI, IMapperUSCDIV3
     {
-
         public MapperUSCDIV3()
         {
         }
-       
+
         public MapperUSCDIV3(
-            CommonMaps commonMaps,
             MapContactUSCDIV3 mapContact,
             MapOrderUSCDIV3 mapOrder,
             MapOrderProvenanceUSCDIV3 mapOrderProvenance,
             MapRedactedOrderUSCDIV3 mapRedactedOrder) :
-            base(commonMaps, mapContact, mapOrder, mapOrderProvenance, mapRedactedOrder)
+            base(mapContact, mapOrder, mapOrderProvenance, mapRedactedOrder)
         {
-
         }
     }
 }

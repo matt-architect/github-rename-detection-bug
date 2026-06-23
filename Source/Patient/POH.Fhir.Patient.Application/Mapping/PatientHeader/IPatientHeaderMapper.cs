@@ -1,6 +1,4 @@
-/* L i c e n s e  N o t i c e */
-
-/* Copyright © 2025 Example Corp. All Rights Reserved.
+/* Copyright © 2025-2026 Example Corp. All Rights Reserved.
 *
 * L i c e n s e  N o t i c e: This software has been provided pursuant to a License Agreement,
 with Example Corp, containing restrictions on its use. This
@@ -17,31 +15,29 @@ ExampleApp is a trademark of Example Corp.
 **/
 /* L i c e n s e  N o t i c e */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Demo.Fhir.Order.Application.Interfaces.Mapping.Profiles.USCDI.V1;
-using Demo.Fhir.Order.Application.Mapping.Profiles.USCDI.V1;
-using ExampleApp.Fhir.Common.Mdrx.V1.Infrastructure;
+using Demo.Fhir.Order.Application.OrderHeader.Models.Response;
+using Demo.Fhir.Order.Domain.Entities;
 
-namespace Demo.Fhir.Order.Application.Mapping.Profiles.USCDI.V1
+namespace Demo.Fhir.Order.Application.Mapping.OrderHeader
 {
-    public class MapperUSCDIV1 : MapperUSCDI, IMapperUSCDIV1
+    /// <summary>
+    /// Interface for mapping OrderHeader entities to response DTOs.
+    /// </summary>
+    public interface IOrderHeaderMapper
     {
-        public MapperUSCDIV1()
-        {
-        }
+        /// <summary>
+        /// Maps OrderHeaderOrderInfoEntity to full OrderHeaderOrderInfoResponse.
+        /// </summary>
+        /// <param name="entity">The order header order info entity</param>
+        /// <returns>The order header order info response DTO</returns>
+        OrderHeaderOrderInfoResponse MapOrderInfo(OrderHeaderOrderInfoEntity entity);
 
-        public MapperUSCDIV1(
-            MapContactUSCDIV1 mapContact,
-            MapOrderUSCDIV1 mapOrder,
-            MapOrderProvenanceUSCDIV1 mapOrderProvenance,
-            MapRedactedOrderUSCDIV1 mapRedactedOrder) :
-            base(mapContact, mapOrder, mapOrderProvenance, mapRedactedOrder)
-        {
-        }
+        /// <summary>
+        /// Maps OrderHeaderOrderInfoEntity to SmallHeaderOrderInfoResponse.
+        /// </summary>
+        /// <param name="entity">The order header order info entity</param>
+        /// <returns>The small header order info response DTO</returns>
+        SmallHeaderOrderInfoResponse MapSmallHeaderOrderInfo(OrderHeaderOrderInfoEntity entity);
     }
 }
 

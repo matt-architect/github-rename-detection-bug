@@ -15,9 +15,9 @@ ExampleApp is a trademark of Example Corp.
 **/
 /* L i c e n s e  N o t i c e */
 
-using AutoMapper;
 using FluentResults;
 using Demo.Fhir.Order.Application.Interfaces.Repositories.OrderHeader;
+using Demo.Fhir.Order.Application.Mapping.OrderHeader;
 using Demo.Fhir.Order.Application.OrderHeader.Models.Response;
 using Demo.Fhir.Order.Application.OrderHeader.Queries;
 using Demo.Fhir.Order.Domain.Entities;
@@ -35,15 +35,15 @@ namespace Demo.Fhir.Order.Application.OrderHeader.Handler
 {
     public class SmallHeaderOrderInfoQueryHandler : IRequestHandler<SmallHeaderOrderInfoQuery, Result<SmallHeaderOrderInfoResponse>>
     {
-       
+
         private const string HandlerName = nameof(SmallHeaderOrderInfoQueryHandler);
-        private readonly IMapper _mapper;
+        private readonly IOrderHeaderMapper _mapper;
         private readonly IOrderHeaderRepository _orderHeaderRepository;
         private readonly IAppLogger<SmallHeaderOrderInfoQueryHandler> _logger;
 
         public SmallHeaderOrderInfoQueryHandler(
             IOrderHeaderRepository orderHeaderRepository,
-            IMapper mapper,
+            IOrderHeaderMapper mapper,
             IAppLogger<SmallHeaderOrderInfoQueryHandler> logger)
         {
             _orderHeaderRepository = orderHeaderRepository;
@@ -98,7 +98,7 @@ namespace Demo.Fhir.Order.Application.OrderHeader.Handler
             }
 
             // Step 4: Map BasicInfo to Response
-            var response = _mapper.Map<SmallHeaderOrderInfoResponse>(basicInfoResult.Value);
+            var response = _mapper.MapSmallHeaderOrderInfo(basicInfoResult.Value);
 
             // Step 5: Add Photo to response if available (non-blocking failure)
             if (photoResult?.IsSuccess == true && photoResult.Value != null)

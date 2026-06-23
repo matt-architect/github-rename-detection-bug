@@ -1,6 +1,6 @@
 /* L i c e n s e  N o t i c e */
 
-/* Copyright © 2025 Example Corp. All Rights Reserved.
+/* Copyright © 2022-2025 Example Corp. All Rights Reserved.
 *
 * L i c e n s e  N o t i c e: This software has been provided pursuant to a License Agreement,
 with Example Corp, containing restrictions on its use. This
@@ -17,31 +17,22 @@ ExampleApp is a trademark of Example Corp.
 **/
 /* L i c e n s e  N o t i c e */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Demo.Fhir.Order.Application.Interfaces.Mapping.Profiles.USCDI.V1;
-using Demo.Fhir.Order.Application.Mapping.Profiles.USCDI.V1;
-using ExampleApp.Fhir.Common.Mdrx.V1.Infrastructure;
-
-namespace Demo.Fhir.Order.Application.Mapping.Profiles.USCDI.V1
+namespace Demo.Fhir.Order.Application.Mapping.Shared
 {
-    public class MapperUSCDIV1 : MapperUSCDI, IMapperUSCDIV1
-    {
-        public MapperUSCDIV1()
-        {
-        }
+    using AMOrder = Domain.Entities.Order;
+    using FhirOrder = ExampleApp.Fhir.Common.Mdrx.V1.Resources.Order;
 
-        public MapperUSCDIV1(
-            MapContactUSCDIV1 mapContact,
-            MapOrderUSCDIV1 mapOrder,
-            MapOrderProvenanceUSCDIV1 mapOrderProvenance,
-            MapRedactedOrderUSCDIV1 mapRedactedOrder) :
-            base(mapContact, mapOrder, mapOrderProvenance, mapRedactedOrder)
-        {
-        }
+    /// <summary>
+    /// Interface for mapping redacted order data.
+    /// </summary>
+    public interface IRedactedOrderMapper
+    {
+        /// <summary>
+        /// Maps a redacted AM Order to a FHIR Order resource.
+        /// </summary>
+        /// <param name="source">The source AM Order entity</param>
+        /// <returns>A FHIR Order resource with only security-permitted fields</returns>
+        FhirOrder Map(AMOrder source);
     }
 }
 

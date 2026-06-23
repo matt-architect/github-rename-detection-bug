@@ -15,7 +15,6 @@ ExampleApp is a trademark of Example Corp.
 **/
 /* L i c e n s e  N o t i c e */
 
-using AutoMapper;
 using Dapper;
 using FluentResults;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -37,16 +36,13 @@ namespace Demo.Fhir.Order.Application.Test
     public class OrderHeaderOrderInfoQueryTest
     {
         private Mock<IOrderHeaderRepository> _repository;
-        private MapperConfiguration _mapperConfiguration;
-        private IMapper _mapper;
+        private IOrderHeaderMapper _mapper;
 
         [TestInitialize]
         public void Setup()
         {
             _repository = new Mock<IOrderHeaderRepository>();
-            _mapperConfiguration = new MapperConfiguration(
-                cfg => cfg.AddProfile(new OrderHeaderOrderInfoProfile()));
-            _mapper = new Mapper(_mapperConfiguration);
+            _mapper = new OrderHeaderMapper();
         }
 
 

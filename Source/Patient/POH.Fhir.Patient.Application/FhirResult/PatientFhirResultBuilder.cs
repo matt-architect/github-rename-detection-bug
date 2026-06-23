@@ -20,7 +20,6 @@ ExampleApp is a trademark of Example Corp.
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using AutoMapper;
 using ExampleApp.Fhir.Common.Mdrx.V1.Resources;
 using POH.BusinessServices.Common.Fhir;
 using Demo.Fhir.Order.Application.Interfaces.Mapping.Shared;

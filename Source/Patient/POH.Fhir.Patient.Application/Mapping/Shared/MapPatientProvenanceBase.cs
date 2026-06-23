@@ -19,7 +19,6 @@ ExampleApp is a trademark of Example Corp.
 
 using System;
 using System.Collections.Generic;
-using AutoMapper;
 using POH.BusinessServices.Common.Abstractions;
 using POH.BusinessServices.Common.Fhir;
 using POH.BusinessServices.Common.Fhir.Abstractions.CodeSystemLookup;
@@ -45,14 +44,9 @@ namespace Demo.Fhir.Order.Application.Mapping.Shared
     /// <summary>
     /// This class encapsulates all of the logic needed to map a Order <see cref="ExampleApp.Fhir.Common.Mdrx.V1.Resources.Provenance"/> record.
     /// </summary>
-    public class MapOrderProvenanceBase : MapBase
+    public class MapOrderProvenanceBase : MapBase, IProvenanceMapper
     {
         protected readonly ProvenanceHelper provenanceHelper;
-
-        /// <summary>
-        /// Mapping expression
-        /// </summary>
-        protected IMappingExpression<AMOrderProvenance, ExampleApp.Fhir.Common.Mdrx.V1.Resources.Provenance> MappingExpression { get; private set; }
 
         public MapOrderProvenanceBase()
         {
@@ -71,16 +65,29 @@ namespace Demo.Fhir.Order.Application.Mapping.Shared
             : base(interfaceTranslation, codeSysLookup, securityLabelHelper, webAPIHelper, dataSource)
         {
             provenanceHelper = new ProvenanceHelper(webAPIHelper, codeSysLookup);
+        }
 
-            this.MappingExpression = CreateMap<AMOrderProvenance, ExampleApp.Fhir.Common.Mdrx.V1.Resources.Provenance>();
-            this.MappingExpression
-                .IgnoreAllMembers() // Ignore All properties so that only mapped ones will be sent out
-                .ForMember(dest => dest.internalID, opt => opt.MapFrom(src => GetInternalId(src.Identifier)))
-                .ForMember(dest => dest.lastUpdated, opt => opt.MapFrom(src => GetLastUpdated(src.LastUpdatedWhen)))
-                .ForMember(dest => dest.Activity, opt => opt.MapFrom(src => GetLastActivity(src)))
-                .ForMember(dest => dest.Agents, opt => opt.MapFrom(src => GetLastAgents(src)))
-                .ForMember(dest => dest.Recorded, opt => opt.MapFrom(src => GetLastRecorded(src.LastUpdatedWhen)))
-                .ForMember(dest => dest.Target, opt => opt.MapFrom(src => GetLastTarget(src)));               
+        /// <summary>
+        /// Maps AM Provenance to a FHIR Provenance resource.
+        /// </summary>
+        /// <param name="source">The source AM Provenance entity</param>
+        /// <returns>A FHIR Provenance resource</returns>
+        public virtual ExampleApp.Fhir.Common.Mdrx.V1.Resources.Provenance Map(AMOrderProvenance source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new ExampleApp.Fhir.Common.Mdrx.V1.Resources.Provenance
+            {
+                internalID = GetInternalId(source.Identifier),
+                lastUpdated = GetLastUpdated(source.LastUpdatedWhen),
+                Activity = GetLastActivity(source),
+                Agents = GetLastAgents(source),
+                Recorded = GetLastRecorded(source.LastUpdatedWhen),
+                Target = GetLastTarget(source)
+            };
         }
 
         /// <summary>

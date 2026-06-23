@@ -1,6 +1,6 @@
 /* L i c e n s e  N o t i c e */
 
-/* Copyright © 2025 Example Corp. All Rights Reserved.
+/* Copyright © 2021-2025 Example Corp. All Rights Reserved.
 *
 * L i c e n s e  N o t i c e: This software has been provided pursuant to a License Agreement,
 with Example Corp, containing restrictions on its use. This
@@ -17,31 +17,23 @@ ExampleApp is a trademark of Example Corp.
 **/
 /* L i c e n s e  N o t i c e */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Demo.Fhir.Order.Application.Interfaces.Mapping.Profiles.USCDI.V1;
-using Demo.Fhir.Order.Application.Mapping.Profiles.USCDI.V1;
-using ExampleApp.Fhir.Common.Mdrx.V1.Infrastructure;
+using ExampleApp.Fhir.Common.Mdrx.V1.BackboneElements;
 
-namespace Demo.Fhir.Order.Application.Mapping.Profiles.USCDI.V1
+namespace Demo.Fhir.Order.Application.Mapping.Shared
 {
-    public class MapperUSCDIV1 : MapperUSCDI, IMapperUSCDIV1
-    {
-        public MapperUSCDIV1()
-        {
-        }
+    using AMContact = Domain.Entities.Contact;
 
-        public MapperUSCDIV1(
-            MapContactUSCDIV1 mapContact,
-            MapOrderUSCDIV1 mapOrder,
-            MapOrderProvenanceUSCDIV1 mapOrderProvenance,
-            MapRedactedOrderUSCDIV1 mapRedactedOrder) :
-            base(mapContact, mapOrder, mapOrderProvenance, mapRedactedOrder)
-        {
-        }
+    /// <summary>
+    /// Interface for mapping order contact information.
+    /// </summary>
+    public interface IContactMapper
+    {
+        /// <summary>
+        /// Maps an AM Contact to a FHIR OrderContact.
+        /// </summary>
+        /// <param name="source">The source AM Contact entity</param>
+        /// <returns>A FHIR OrderContact backbone element</returns>
+        OrderContact Map(AMContact source);
     }
 }
 

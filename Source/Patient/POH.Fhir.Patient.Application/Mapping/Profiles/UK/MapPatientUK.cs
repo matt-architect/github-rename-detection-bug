@@ -74,9 +74,7 @@ namespace Demo.Fhir.Order.Application.Mapping.Profiles.UK
         [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed.")]
         public MapOrderUK(IInterfaceTranslation interfaceTranslation, ICodeSystemLookup codeSysLookup, ISecurityLabelHelper securityLabelHelper, IWebApiHelper webApiHelper, IDataSource dataSource) : base(interfaceTranslation, codeSysLookup, securityLabelHelper, webApiHelper, dataSource)
         {
-            // Example of mapping changing
-            this.MappingExpression.ForMember(dest => dest.GeneralPractitioners,
-                opt => opt.ResolveUsing(this.FhirGeneralPractitioner));
+            // UK-specific initialization complete - GeneralPractitioner override is handled in FhirGeneralPractitioner method
         }
 
         /// <summary>

@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using AutoMapper;
 using ExampleApp.Fhir.Common.Mdrx.V1.Infrastructure;
 
 namespace Demo.Fhir.Order.Application.Interfaces.Mapping.Shared

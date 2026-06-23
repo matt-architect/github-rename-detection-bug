@@ -87,11 +87,9 @@ public static class DependencyInjection
         services.AddScoped<MapRedactedOrderBase, MapRedactedOrderUK>();
         services.AddScoped<IMapperUK, MapperUK>();
 
-        services.AddAutoMapper(cfg =>
-        {
-            cfg.AddProfile<OrderHeaderOrderInfoProfile>();
-            cfg.AddProfile<SmallHeaderOrderInfoProfile>();
-        });
+        // Register OrderHeader mapper
+        services.AddScoped<IOrderHeaderMapper, OrderHeaderMapper>();
+
         return services;
     }
 }

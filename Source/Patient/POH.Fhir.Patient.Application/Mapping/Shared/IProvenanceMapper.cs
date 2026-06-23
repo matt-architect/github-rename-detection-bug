@@ -1,4 +1,6 @@
-/* Copyright © 2026 Example Corp. All Rights Reserved.
+/* L i c e n s e  N o t i c e */
+
+/* Copyright © 2021-2025 Example Corp. All Rights Reserved.
 *
 * L i c e n s e  N o t i c e: This software has been provided pursuant to a License Agreement,
 with Example Corp, containing restrictions on its use. This
@@ -15,23 +17,25 @@ ExampleApp is a trademark of Example Corp.
 **/
 /* L i c e n s e  N o t i c e */
 
-using AutoMapper;
-using Demo.Fhir.Order.Application.OrderHeader.Models.Response;
-using Demo.Fhir.Order.Domain.Entities;
-
-namespace Demo.Fhir.Order.Application.Mapping.OrderHeader
+namespace Demo.Fhir.Order.Application.Mapping.Shared
 {
-    public class SmallHeaderOrderInfoProfile : Profile
-    {
-        public SmallHeaderOrderInfoProfile()
-        {
-            AllowNullCollections = true;
-            AllowNullDestinationValues = true;
-            CreateMap<OrderHeaderOrderInfoEntity, SmallHeaderOrderInfoResponse>();
+    using AMProvenance = Domain.Entities.Provenance;
+    using FhirProvenance = ExampleApp.Fhir.Common.Mdrx.V1.Resources.Provenance;
 
-        }
+    /// <summary>
+    /// Interface for mapping order provenance/audit information.
+    /// </summary>
+    public interface IProvenanceMapper
+    {
+        /// <summary>
+        /// Maps AM Provenance to a FHIR Provenance resource.
+        /// </summary>
+        /// <param name="source">The source AM Provenance entity</param>
+        /// <returns>A FHIR Provenance resource</returns>
+        FhirProvenance Map(AMProvenance source);
     }
 }
+
 /* L i c e n s e  N o t i c e */
 /*
 Confidential and license information of Example Corp. Authorized users only.
