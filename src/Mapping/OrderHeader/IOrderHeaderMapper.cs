@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2025 Example Corp. All Rights Reserved.
+// Copyright (c) 2026 Example Corp. All Rights Reserved.
 //
 // This software has been provided pursuant to a License Agreement,
 // with Example Corp, containing restrictions on its use. This
@@ -14,26 +14,15 @@
 //
 // Notice to U.S. Government Users: This software is "Commercial Computer Software."
 
-using AutoMapper;
 using Example.Application.OrderHeader.Models.Response;
 using Example.Domain.Entities;
 
 namespace Example.Application.Mapping.OrderHeader
 {
-    public class OrderHeaderOrderInfoProfile : Profile
+    public interface IOrderHeaderMapper
     {
-        public OrderHeaderOrderInfoProfile()
-        {
-            AllowNullCollections = true;
-            AllowNullDestinationValues = true;
-
-            CreateMap<OrderHeaderOrderInfoEntity, OrderHeaderOrderInfoResponse>()
-                .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.OrderIdentifier))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OrderStatus))
-                .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.OrderPriority))
-                .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => src.CreatedDateUtc))
-                .ForMember(dest => dest.ModifiedDate, opt => opt.MapFrom(src => src.ModifiedDateUtc));
-        }
+        OrderHeaderOrderInfoResponse MapOrderInfo(OrderHeaderOrderInfoEntity entity);
+        SmallHeaderOrderInfoResponse MapSmallHeaderOrderInfo(OrderHeaderOrderInfoEntity entity);
     }
 }
 
