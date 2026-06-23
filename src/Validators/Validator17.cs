@@ -3,7 +3,7 @@ namespace Example.Module17
 {
     public class Service17
     {
-        public string GetValue() => "initial-value-17";
+        public string GetUpdatedValue() => "updated-value-17";
         public int Compute(int x) => x * 17;
     }
 }
